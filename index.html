@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Socket.IO chat 1.0.1</title>
+  <style>
+    body {
+      margin: 0;
+      padding-bottom: 3rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #form {
+      background: rgba(0, 0, 0, 0.15);
+      padding: 0.25rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      height: 3rem;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
+    }
+
+    #formNome {
+      background: rgba(0, 0, 0, 0.15);
+      padding: 0.25rem;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      height: 3rem;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
+    }
+
+    #input {
+      border: none;
+      padding: 0 1rem;
+      flex-grow: 1;
+      border-radius: 2rem;
+      margin: 0.25rem;
+    }
+
+    #name {
+      border: none;
+      padding: 0 1rem;
+      flex-grow: 1;
+      border-radius: 2rem;
+      margin: 0.25rem;
+    }
+
+    #input:focus {
+      outline: none;
+    }
+
+    #name:focus {
+      outline: none;
+    }
+
+    #form>button {
+      background: #333;
+      border: none;
+      padding: 0 1rem;
+      margin: 0.25rem;
+      border-radius: 3px;
+      outline: none;
+      color: #fff;
+    }
+
+    #formNome>button {
+      background: #333;
+      border: none;
+      padding: 0 1rem;
+      margin: 0.25rem;
+      border-radius: 3px;
+      outline: none;
+      color: #fff;
+    }
+
+    #messages {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    #messages>li {
+      padding: 0.5rem 1rem;
+    }
+
+    #messages>li:nth-child(odd) {
+      background: #efefef;
+    }
+  </style>
+  <link rel="icon" type="image/x-icon" href="./favicon">
+</head>
+
+<body>
+  <ul id="messages"></ul>
+  <form id="formNome" action="">
+    <input id="nome" placeholder="Insira seu nome..." autocomplete="off" /><button>Enviar</button>
+  </form>
+  <form id="form" action="" style="display: none;">
+    <input id="input" autocomplete="off" /><button>Enviar</button>
+  </form>
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script>
+    var socket = io();
+
+    var messages = document.getElementById('messages');
+    var formNome = document.getElementById('formNome');
+    var form = document.getElementById('form');
+    var input = document.getElementById('input');
+    var nome = document.getElementById('nome');
+
+    function notify(msg) {
+      Notification.requestPermission(function () {
+        var notification = new Notification("Nova Mensagem", {
+          icon: './favicon',
+          body: msg
+        });
+      });
+    }
+    formNome.addEventListener('submit', function (e) {
+      e.preventDefault();
+      nome = document.getElementById('nome');
+      if (nome.value == "") {
+        nome.value = "Anônimo"
+      }
+      form.style.display = "flex";
+      formNome.style.display = "none";
+      Notification.requestPermission();
+
+      socket.on('chat historic', (msg) => {
+        if (msg == "end") {
+          socket.off('chat historic');
+        } else {
+          var item = document.createElement('li');
+          item.textContent = msg;
+          messages.appendChild(item);
+          window.scrollTo(0, document.body.scrollHeight);
+        }
+      });
+      socket.emit('chat historic', "");
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (input.value) {
+        socket.emit('chat message', input.value, nome.value);
+        input.value = '';
+      }
+    });
+
+    socket.on('chat message', (msg, nome) => {
+      var item = document.createElement('li');
+      item.textContent = nome + ": " + msg;
+      messages.appendChild(item);
+      window.scrollTo(0, document.body.scrollHeight);
+
+      if (nome != document.getElementById('nome').value && document.visibilityState == 'hidden') {
+        notify(item.textContent)
+      }
+    });
+
+  </script>
+</body>
+
+</html>

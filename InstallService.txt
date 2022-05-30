@@ -1,0 +1,2 @@
+cd ./nssm/win64
+nssm install simpleChat
